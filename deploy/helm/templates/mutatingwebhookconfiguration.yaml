@@ -6,6 +6,7 @@ metadata:
 {{ include "talend-vault-sidecar-injector.labels" . | indent 4 }}
 webhooks:
   - name: vault-sidecar-injector.talend.org
+    reinvocationPolicy: IfNeeded
     clientConfig:
       service:
         name: {{ include "talend-vault-sidecar-injector.service.name" . }}
