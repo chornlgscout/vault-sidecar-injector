@@ -11,13 +11,18 @@ initContainers:
       - name: VSI_SECRETS_TEMPLATES_PLACEHOLDER
         value: ""
       # env var set by webhook
+      - name: VSI_VAULT_AUTH_METHOD
+        value: "kubernetes"
+      # env var set by webhook
       - name: VSI_VAULT_ROLE
         value: ""
     command:
       - "sh"
+      - "-x"
       - "-c"
       - |
-        cat <<EOF > vault-agent-config.hcl
+        if [ "${VSI_VAULT_AUTH_METHOD}" = "kubernetes" ]; then
+          cat <<EOF > vault-agent-config.hcl
         pid_file = "/home/vault/pidfile"
 
         auto_auth {
@@ -36,9 +41,34 @@ initContainers:
           }
         }
 
+        ${VSI_PROXY_CONFIG_PLACEHOLDER}
+
         ${VSI_SECRETS_TEMPLATES_PLACEHOLDER}
         EOF
-        
+        elif [ "${VSI_VAULT_AUTH_METHOD}" = "approle" ]; then
+          cat <<EOF > vault-agent-config.hcl
+        pid_file = "/home/vault/pidfile"
+
+        auto_auth {
+          method "approle" {
+            mount_path = "auth/{{ .Values.vault.authMethods.approle.path }}"
+            config = {
+              role_id_file_path = "/opt/talend/secrets/{{ .Values.vault.authMethods.approle.roleid_filename }}"
+              secret_id_file_path = "/opt/talend/secrets/{{ .Values.vault.authMethods.approle.secretid_filename }}"
+              remove_secret_id_file_after_reading = false
+            }
+          }
+
+          sink "file" {
+            config = {
+              path = "/home/vault/.vault-token"
+            }
+          }
+        }
+
+        ${VSI_SECRETS_TEMPLATES_PLACEHOLDER}
+        EOF
+        fi
         docker-entrypoint.sh agent -config=vault-agent-config.hcl -exit-after-auth=true {{ include "talend-vault-sidecar-injector.vault.cert.skip.verify" .Values }} -log-level={{- .Values.injectconfig.vault.loglevel }}
         export VAULT_TOKEN=$(cat /home/vault/.vault-token)
         vault token revoke {{ include "talend-vault-sidecar-injector.vault.cert.skip.verify" .Values }} -self
