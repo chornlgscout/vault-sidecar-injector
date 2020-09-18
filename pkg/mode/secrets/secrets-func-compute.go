@@ -79,13 +79,6 @@ func secretsModeCompute(config *cfg.VSIConfig, labels, annotations map[string]st
 		return nil, err
 	}
 
-	// If authentication method is "approle" and static secrets: return error (unsupported because, as static secrets, approle needs initContainer)
-	if secretsType == vaultInjectorSecretsTypeStatic && annotations[config.VaultInjectorAnnotationsFQ[ctx.VaultInjectorAnnotationAuthMethodKey]] == ctx.VaultAppRoleAuthMethod {
-		err := fmt.Errorf("Submitted pod uses unsupported combination of Vault Auth Method '%s' with static secrets", ctx.VaultAppRoleAuthMethod)
-		klog.Errorf("[%s] %s", VaultInjectorModeSecrets, err.Error())
-		return nil, err
-	}
-
 	if secretsPathNum == 1 && secretsPath[0] == "" { // Build default secrets path: "secret/<application label>/<service label>"
 		applicationLabel := labels[config.ApplicationLabelKey]
 		applicationServiceLabel := labels[config.ApplicationServiceLabelKey]

@@ -247,7 +247,8 @@ func (vaultInjector *VaultInjector) addContainer(podContainers []corev1.Containe
 		path := basePath
 
 		// For initContainers:
-		// add them at the beginning of the array to make sure they are run before any initContainers in the requesting pod: this way initContainers
+		// for approle auth, ensure added to end so that approle is set
+		// else add them at the beginning of the array to make sure they are run before any initContainers in the requesting pod: this way initContainers
 		// belonging to the pod have a chance to process the secrets file(s) if needed.
 		//
 		// For containers:
@@ -255,6 +256,8 @@ func (vaultInjector *VaultInjector) addContainer(podContainers []corev1.Containe
 		if first {
 			first = false
 			value = []corev1.Container{container}
+		} else if initContainer && context.VaultAuthMethod == "approle" {
+			path = path + "/" + strconv.Itoa(len(podContainers)+injectionCntIdx)
 		} else {
 			// JSON Patch: use '/<index of container>' to add our container/initContainer at the beginning of the array
 			path = path + "/" + strconv.Itoa(injectionCntIdx)

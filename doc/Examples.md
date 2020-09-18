@@ -499,8 +499,6 @@ spec:
 
 ## Using Vault AppRole Auth Method
 
-> ⚠️ AppRole Auth Method can only be used with **dynamic** secrets.
-
 <details>
 <summary>
 Show example

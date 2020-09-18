@@ -25,7 +25,7 @@ func secretsModeInject(containerBasePath string, podContainers []corev1.Containe
 	for _, cntName := range secretsContainerNames[containerBasePath] {
 		if cntName == containerName {
 			// Look type of secrets: inject init container only for static secrets
-			if (isSecretsStatic(context) && (containerBasePath == ctx.JsonPathInitContainers)) ||
+			if (containerBasePath == ctx.JsonPathInitContainers) ||
 				(!isSecretsStatic(context) && (containerBasePath == ctx.JsonPathContainers)) {
 
 				if (cntName == secretsEnvInitContainerName) && !isSecretsInjectionEnv(context) {
